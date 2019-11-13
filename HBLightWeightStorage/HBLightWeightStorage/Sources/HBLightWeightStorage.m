@@ -78,15 +78,14 @@
 
 + (void)setUserDefaultValue:(id _Nullable)value withKey:(NSString *)key {
     if (key && value) {
-        NSUserDefaults *userDefault = [NSUserDefaults standardUserDefaults];
-        dispatch_block_t block = ^{
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSUserDefaults *userDefault = [NSUserDefaults standardUserDefaults];
             NSData *objectData = [self keyedArchiverWithValue:value];
             if (objectData) {
                 [userDefault setObject:objectData forKey:key];
                 [userDefault synchronize]; //存储值立即变成持久对象
             }
-        };
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), block);
+        });
     }
 }
 
@@ -116,12 +115,14 @@
 
 + (void)setKeychainValue:(id _Nullable)value withKeyQueries:(NSDictionary *)keyQueries {
     if (value && keyQueries) {
-        NSData *archivedData = [self keyedArchiverWithValue:value];
-        if (archivedData) {
-            NSMutableDictionary *mKeyQueries = [NSMutableDictionary dictionaryWithDictionary:keyQueries];
-            [mKeyQueries setObject:archivedData forKey:(__bridge id)kSecValueData];
-            SecItemAdd((__bridge CFMutableDictionaryRef)mKeyQueries, NULL);
-        }
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSData *archivedData = [self keyedArchiverWithValue:value];
+            if (archivedData) {
+                NSMutableDictionary *mKeyQueries = [NSMutableDictionary dictionaryWithDictionary:keyQueries];
+                [mKeyQueries setObject:archivedData forKey:(__bridge id)kSecValueData];
+                SecItemAdd((__bridge CFMutableDictionaryRef)mKeyQueries, NULL);
+            }
+        });
     }
 }
 
