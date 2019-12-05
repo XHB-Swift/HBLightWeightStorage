@@ -189,34 +189,28 @@
 + (id _Nullable)keyedUnarchiverWithData:(NSData *_Nullable)data valueClass:(Class)cls {
     id value = nil;
     if (data) {
-        @try {
-            Class keyedUnarchiverClass = [NSKeyedUnarchiver class];
-            float systemVersion = [[[UIDevice currentDevice] systemVersion] floatValue];
-            BOOL isBiggerThan11 = systemVersion >= 11.0;
-            NSString *archiverMethod = isBiggerThan11 ? @"unarchivedObjectOfClasses:fromData:error:":@"unarchiveObjectWithData:";
-            SEL archiverSel = NSSelectorFromString(archiverMethod);
-            if (archiverSel != NULL && [NSKeyedUnarchiver respondsToSelector:archiverSel]) {
-                IMP archiverImp = [NSKeyedUnarchiver methodForSelector:archiverSel];
-                if (archiverImp != NULL) {
-                    [NSKeyedUnarchiver setClass:cls forClassName:NSStringFromClass(cls)];
-                    if (isBiggerThan11) {
-                        id(*func)(id,SEL,NSSet<Class> *,NSData *,NSError **) = (void *)archiverImp;
-                        NSError *error = nil;
-                        NSSet<Class> *classSet = [NSSet setWithArray:@[cls,]];
-                        value = func(keyedUnarchiverClass, archiverSel, classSet, data, &error);
-                        if (error) {
-                            NSLog(@"%s, error = %@", __func__, error);
-                        }
-                    }else {
-                        id(*func)(id,SEL,NSData *) = (void *)archiverImp;
-                        value = func(keyedUnarchiverClass, archiverSel, data);
+        Class keyedUnarchiverClass = [NSKeyedUnarchiver class];
+        float systemVersion = [[[UIDevice currentDevice] systemVersion] floatValue];
+        BOOL isBiggerThan11 = systemVersion >= 11.0;
+        NSString *archiverMethod = isBiggerThan11 ? @"unarchivedObjectOfClasses:fromData:error:":@"unarchiveObjectWithData:";
+        SEL archiverSel = NSSelectorFromString(archiverMethod);
+        if (archiverSel != NULL && [NSKeyedUnarchiver respondsToSelector:archiverSel]) {
+            IMP archiverImp = [NSKeyedUnarchiver methodForSelector:archiverSel];
+            if (archiverImp != NULL) {
+                [NSKeyedUnarchiver setClass:cls forClassName:NSStringFromClass(cls)];
+                if (isBiggerThan11) {
+                    id(*func)(id,SEL,NSSet<Class> *,NSData *,NSError **) = (void *)archiverImp;
+                    NSError *error = nil;
+                    NSSet<Class> *classSet = [NSSet setWithArray:@[cls,]];
+                    value = func(keyedUnarchiverClass, archiverSel, classSet, data, &error);
+                    if (error) {
+                        NSLog(@"%s, error = %@", __func__, error);
                     }
+                }else {
+                    id(*func)(id,SEL,NSData *) = (void *)archiverImp;
+                    value = func(keyedUnarchiverClass, archiverSel, data);
                 }
             }
-        } @catch (NSException *exception) {
-            NSLog(@"exception = %@", exception);
-        } @finally {
-            
         }
     }
     return value;
